@@ -40,22 +40,23 @@ export default App
 
 13- Agregamos carpeta models en src, creamos el archivo http.model.ts e instalamos librería axios: npm i axios:
 
-import { AxiosRequestConfig } from 'axios'
+iimport { AxiosRequestConfig } from "axios";
 
 export interface HttpResponse<T> {
-data: T
-message: string
-status: string
-loading?: boolean
+apiCode: number;
+apiData: T;
+apiError: boolean;
+apiErrors: string;
+apiMessage: string;
 }
 
 export interface Http {
-get<T>(url: string, config?: AxiosRequestConfig): Promise<T>
-put<T>(url: string, data: any, config?: AxiosRequestConfig): Promise<T>
-post<T>(url: string, data: any, config?: AxiosRequestConfig): Promise<T>
-delete<T>(url: string, config?: AxiosRequestConfig): Promise<T>
-patch<T>(url: string, data: any, config?: AxiosRequestConfig): Promise<T>
-cancelRequest(): void
+get<T>(url: string, config?: AxiosRequestConfig): Promise<T>;
+put<T>(url: string, data: any, config?: AxiosRequestConfig): Promise<T>;
+post<T>(url: string, data: any, config?: AxiosRequestConfig): Promise<T>;
+delete<T>(url: string, config?: AxiosRequestConfig): Promise<T>;
+patch<T>(url: string, data: any, config?: AxiosRequestConfig): Promise<T>;
+cancelRequest(): void;
 }
 
 14- Agregamos carpeta utils en src, creamos el archivo regex.util.ts, tener en cuenta cambiar el signo asterisco
@@ -352,16 +353,221 @@ this.abortController.abort()
 
 export default HttpService
 
-21- Agregamos la carpeta services y adentro la carpeta persona con el archivo persona.ts
+21- Agregamos el archivo api.config.ts en la carpeta configs con las rutas de las apis:
 
-22- Creamos carpeta store y adentro del archivo store.tsx que contendrá todos los reducers con el siguiente código:
+export const API = {
+PERSONA_GET_ALL: "persona",
+PERSONA_CREATE: "persona",
+PERSONA_UPDATE: "persona/{id}",
+PERSONA_DELETE: "persona/{id}",
+};
+
+22- Agregamos el archivo persona.model.ts en la carpeta models con los modelos de persona:
+
+import { HttpResponse } from "./http.model";
+
+export interface BasePersona {
+noDocumento: string;
+nombres: string;
+apellidos: string;
+}
+
+export interface CreatePersona extends BasePersona {}
+
+export interface UpdatePersona extends BasePersona {
+idPersona: number;
+}
+
+export interface DataPersona extends BasePersona {
+idPersona: number;
+}
+
+export interface PersonaResponse extends HttpResponse<DataPersona | null> {}
+
+23- Agregamos la carpeta services y adentro la carpeta persona con el archivo persona.service.ts:
+
+import { API } from "../../configs/api.config";
+import HttpService from "../../configs/http.config";
+import {
+CreatePersona,
+PersonaResponse,
+UpdatePersona,
+} from "../../models/persona.model";
+
+export class PersonaService {
+private http: HttpService;
+
+constructor() {
+this.http = new HttpService();
+}
+
+async getAllPersonas(): Promise<PersonaResponse> {
+const response = await this.http.get<PersonaResponse>(API.PERSONA_GET_ALL);
+
+    return response;
+
+}
+
+async createPersona(dto: CreatePersona): Promise<PersonaResponse> {
+const response = await this.http.post<PersonaResponse>(
+API.PERSONA_CREATE,
+dto
+);
+
+    return response;
+
+}
+
+async updatePersona(dto: UpdatePersona): Promise<PersonaResponse> {
+const response = await this.http.put<PersonaResponse>(
+API.PERSONA_UPDATE.replace("{id}", dto.idPersona.toString()),
+dto
+);
+
+    return response;
+
+}
+
+async deletePersona(id: number): Promise<PersonaResponse> {
+const response = await this.http.delete<PersonaResponse>(
+API.PERSONA_DELETE.replace("{id}", id.toString())
+);
+
+    return response;
+
+}
+}
+
+24- Creamos carpeta store y adentro la carpeta persona con el archivo persona.thunks.ts que contendrá los thunks de persona con el siguiente código:
+
+import { createAsyncThunk } from "@reduxjs/toolkit";
+import { PersonaService } from "../../services/persona/persona.service";
+import { CreatePersona, UpdatePersona } from "../../models/persona.model";
+
+export const findAllPersonas = createAsyncThunk(
+"appPersona/findAllPersonas",
+async () => {
+const personaService = new PersonaService();
+const response = await personaService.getAllPersonas();
+return { data: response.apiData };
+}
+);
+
+export const addPersona = createAsyncThunk(
+"appPersona/addPersona",
+async (dto: CreatePersona) => {
+const personaService = new PersonaService();
+const response = await personaService.createPersona(dto);
+return { data: response.apiData[0] };
+}
+);
+
+export const updatePersona = createAsyncThunk(
+"appPersona/updatePersona",
+async (dto: UpdatePersona) => {
+const personaService = new PersonaService();
+const response = await personaService.updatePersona(dto);
+return { data: dto };
+}
+);
+
+export const deletePersona = createAsyncThunk(
+"appPersona/deletePersona",
+async (id: number) => {
+const personaService = new PersonaService();
+const response = await personaService.deletePersona(id);
+return { id };
+}
+);
+
+26- Creamos carpeta store y adentro del archivo persona.slice.ts que contendrá todos los reducers con el siguiente código:
+
+import { createSlice } from "@reduxjs/toolkit";
+import {
+addPersona,
+deletePersona,
+findAllPersonas,
+updatePersona,
+} from "./persona.thunks";
+import { InitialStatePersonaSlice } from "../../models/persona.model";
+
+export const personaSlice = createSlice({
+name: "persona",
+initialState: InitialStatePersonaSlice,
+reducers: {},
+extraReducers: (builder) => {
+builder
+.addCase(findAllPersonas.pending, (state) => {
+return { ...state, isLoading: true };
+})
+.addCase(findAllPersonas.fulfilled, (state, action) => {
+return {
+...state,
+data: action.payload.data,
+isLoading: false,
+};
+})
+.addCase(findAllPersonas.rejected, (state) => {
+return { ...state, isLoading: false };
+})
+.addCase(addPersona.pending, (state) => {
+return { ...state, isLoading: true };
+})
+.addCase(addPersona.fulfilled, (state, action) => {
+return {
+...state,
+data: [...state.data, action.payload.data],
+isLoading: false,
+};
+})
+.addCase(addPersona.rejected, (state) => {
+return { ...state, isLoading: false };
+})
+.addCase(updatePersona.pending, (state) => {
+return { ...state, isLoading: true };
+})
+.addCase(updatePersona.fulfilled, (state, action) => {
+return {
+...state,
+data: state.data.map((item) =>
+item.idPersona === action.payload.data.idPersona
+? action.payload.data
+: item
+),
+isLoading: false,
+};
+})
+.addCase(updatePersona.rejected, (state) => {
+return { ...state, isLoading: false };
+})
+.addCase(deletePersona.pending, (state) => {
+return { ...state, isLoading: true };
+})
+.addCase(deletePersona.fulfilled, (state, action) => {
+return {
+...state,
+data: state.data.filter(
+(item) => item.idPersona !== action.payload.id
+),
+isLoading: false,
+};
+})
+.addCase(deletePersona.rejected, (state) => {
+return { ...state, isLoading: false };
+});
+},
+});
+
+27- Creamos carpeta store y adentro del archivo store.ts que contendrá todos los reducers con el siguiente código:
 
 import { configureStore } from "@reduxjs/toolkit";
+import { personaSlice } from "./persona/persona.slice";
 
 export const store = configureStore({
-reducer: { }, });
+reducer: { persona: personaSlice.reducer },
+});
 
-23- El archivo principal (main.tsx) donde queda el store como el proveedor del store queda asi:
+28- El archivo principal (main.tsx) donde queda el store como el proveedor del store queda asi:
 
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
@@ -382,7 +588,6 @@ createRoot(document.getElementById('root')!).render(
 </StrictMode>,
 )
 
-24- Agregamos la caperta persona en la carpeta store y adentro creamos los archivos: personaSlice.ts,
-personaThunks.ts y index.ts
+29- Agregamos la caperta modules donde agregaremos los componentes
 
 25-
