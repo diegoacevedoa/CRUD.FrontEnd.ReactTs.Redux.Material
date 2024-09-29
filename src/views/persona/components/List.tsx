@@ -1,13 +1,14 @@
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { findAllPersonas } from "../../../store/persona/persona.thunks";
-import { PersonaSlice } from "../../../models/persona.model";
+import { DataPersona, PersonaSlice } from "../../../models/persona.model";
 import { Box, Typography, Tooltip, IconButton, Link } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import { GridColDef } from "@mui/x-data-grid";
 import Table from "../../../components/table";
 import { AppDispatch, RootState } from "../../../store/store";
+import { activeForm } from "../../../store/persona/persona.slice";
 
 const PersonaList = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -23,6 +24,17 @@ const PersonaList = () => {
     dispatch(findAllPersonas()).unwrap();
   };
 
+  const handleEdit = (item: DataPersona) => {
+    dispatch(
+      activeForm({
+        title: "Editar Persona",
+        isNew: false,
+        show: true,
+        data: item,
+      })
+    );
+  };
+
   const columns: GridColDef[] = [
     {
       minWidth: 70,
@@ -33,7 +45,7 @@ const PersonaList = () => {
       renderCell: ({ row }) => (
         <Box display="flex" alignItems="center">
           <Tooltip title="Editar">
-            <IconButton size="small">
+            <IconButton size="small" onClick={() => handleEdit(row)}>
               <EditIcon />
             </IconButton>
           </Tooltip>

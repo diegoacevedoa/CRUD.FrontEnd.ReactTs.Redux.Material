@@ -13,6 +13,7 @@ export interface UpdatePersona extends BasePersona {
 }
 
 export interface DataPersona extends BasePersona {
+  // id: number | null | undefined;
   id: number;
 }
 
@@ -24,10 +25,18 @@ export interface PersonaResponse extends HttpResponse<DataResponsePersona[]> {}
 
 export interface PersonaSlice {
   data: DataPersona[];
+  active?: DataPersona | null;
+  title: string;
+  isNew: boolean;
+  show: boolean;
   isLoading: boolean;
 }
 
 export const InitialStatePersonaSlice: PersonaSlice = {
   data: [],
+  active: null,
+  title: "",
+  isNew: false,
+  show: false,
   isLoading: false,
 };

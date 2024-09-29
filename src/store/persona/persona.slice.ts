@@ -10,7 +10,17 @@ import { InitialStatePersonaSlice } from "../../models/persona.model";
 export const personaSlice = createSlice({
   name: "persona",
   initialState: InitialStatePersonaSlice,
-  reducers: {},
+  reducers: {
+    activeForm: (state, action) => {
+      return {
+        ...state,
+        active: action.payload.data,
+        title: action.payload.title,
+        isNew: action.payload.isNew,
+        show: action.payload.show,
+      };
+    },
+  },
   extraReducers: (builder) => {
     builder
       .addCase(findAllPersonas.pending, (state) => {
@@ -69,3 +79,6 @@ export const personaSlice = createSlice({
       });
   },
 });
+
+// Action creators are generated for each case reducer function
+export const { activeForm } = personaSlice.actions;

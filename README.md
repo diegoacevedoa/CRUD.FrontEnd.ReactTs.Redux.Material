@@ -701,5 +701,9 @@ export default Table;
 
 export { default } from "./Table";
 
-32- 
+32- Instalamos el componente de formulario: npm install react-hook-form
+
+33- Instalamos el componente de yup para las validaciones de esquema:npm install @hookform/resolvers yup
+
+34- 
 
