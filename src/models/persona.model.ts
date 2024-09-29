@@ -9,14 +9,18 @@ export interface BasePersona {
 export interface CreatePersona extends BasePersona {}
 
 export interface UpdatePersona extends BasePersona {
-  idPersona: number;
+  id: number;
 }
 
 export interface DataPersona extends BasePersona {
+  id: number;
+}
+
+export interface DataResponsePersona extends BasePersona {
   idPersona: number;
 }
 
-export interface PersonaResponse extends HttpResponse<DataPersona[]> {}
+export interface PersonaResponse extends HttpResponse<DataResponsePersona[]> {}
 
 export interface PersonaSlice {
   data: DataPersona[];

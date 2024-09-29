@@ -1,11 +1,9 @@
 import { AxiosRequestConfig } from "axios";
 
 export interface HttpResponse<T> {
-  apiCode: number;
-  apiData: T;
-  apiError: boolean;
-  apiErrors: string;
-  apiMessage: string;
+  data: T;
+  message: string;
+  status: string;
 }
 
 export interface Http {

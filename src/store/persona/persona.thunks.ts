@@ -1,13 +1,27 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { PersonaService } from "../../services/persona/persona.service";
-import { CreatePersona, UpdatePersona } from "../../models/persona.model";
+import {
+  CreatePersona,
+  DataPersona,
+  UpdatePersona,
+} from "../../models/persona.model";
 
 export const findAllPersonas = createAsyncThunk(
   "appPersona/findAllPersonas",
   async () => {
     const personaService = new PersonaService();
     const response = await personaService.getAllPersonas();
-    return { data: response.apiData };
+
+    const data: DataPersona[] = response.data.map((item) => {
+      return {
+        id: item.idPersona,
+        noDocumento: item.noDocumento,
+        nombres: item.nombres,
+        apellidos: item.apellidos,
+      };
+    });
+
+    return { data: data };
   }
 );
 
@@ -16,7 +30,17 @@ export const addPersona = createAsyncThunk(
   async (dto: CreatePersona) => {
     const personaService = new PersonaService();
     const response = await personaService.createPersona(dto);
-    return { data: response.apiData[0] };
+
+    const data: DataPersona[] = response.data.map((item) => {
+      return {
+        id: item.idPersona,
+        noDocumento: item.noDocumento,
+        nombres: item.nombres,
+        apellidos: item.apellidos,
+      };
+    });
+
+    return { data: data[0] };
   }
 );
 

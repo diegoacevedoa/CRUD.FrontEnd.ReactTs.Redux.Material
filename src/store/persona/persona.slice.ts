@@ -46,9 +46,7 @@ export const personaSlice = createSlice({
         return {
           ...state,
           data: state.data.map((item) =>
-            item.idPersona === action.payload.data.idPersona
-              ? action.payload.data
-              : item
+            item.id === action.payload.data.id ? action.payload.data : item
           ),
           isLoading: false,
         };
@@ -62,9 +60,7 @@ export const personaSlice = createSlice({
       .addCase(deletePersona.fulfilled, (state, action) => {
         return {
           ...state,
-          data: state.data.filter(
-            (item) => item.idPersona !== action.payload.id
-          ),
+          data: state.data.filter((item) => item.id !== action.payload.id),
           isLoading: false,
         };
       })

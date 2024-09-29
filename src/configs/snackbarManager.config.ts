@@ -1,25 +1,25 @@
-import { useSnackbar, ProviderContext, VariantType } from 'notistack'
+import { useSnackbar, ProviderContext, VariantType } from "notistack";
 
-let useSnackbarRef: ProviderContext
+let useSnackbarRef: ProviderContext;
 export const SnackbarUtilitiesConfigurator = () => {
-  useSnackbarRef = useSnackbar()
-  return null
-}
+  useSnackbarRef = useSnackbar();
+  return null;
+};
 
 export const snackbarUtilities = {
-  toast(message: string, variant: VariantType = 'default') {
-    useSnackbarRef.enqueueSnackbar(message, { variant })
+  toast(message: string, variant: VariantType = "default") {
+    useSnackbarRef.enqueueSnackbar(message, { variant });
   },
   success(message: string) {
-    this.toast(message, 'success')
+    this.toast(message, "success");
   },
   error(message: string) {
-    this.toast(message, 'error')
+    this.toast(message, "error");
   },
   info(message: string) {
-    this.toast(message, 'info')
+    this.toast(message, "info");
   },
   warning(message: string) {
-    this.toast(message, 'warning')
+    this.toast(message, "warning");
   },
-}
+};

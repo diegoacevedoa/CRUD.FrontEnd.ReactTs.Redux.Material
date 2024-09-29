@@ -1,9 +1,8 @@
-const App = () => {
-  return (
-    <div>
-      HOLA
-    </div>
-  )
-}
+import PersonaPage from "./pages/Persona"
 
-export default App
+const App = () => {
+  return <PersonaPage />;
+};
+
+export default App;
+

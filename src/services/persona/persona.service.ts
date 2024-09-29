@@ -30,7 +30,7 @@ export class PersonaService {
 
   async updatePersona(dto: UpdatePersona): Promise<PersonaResponse> {
     const response = await this.http.put<PersonaResponse>(
-      API.PERSONA_UPDATE.replace("{id}", dto.idPersona.toString()),
+      API.PERSONA_UPDATE.replace("{id}", dto.id.toString()),
       dto
     );
 

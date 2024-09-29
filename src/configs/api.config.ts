@@ -1,6 +1,6 @@
 export const API = {
-  PERSONA_GET_ALL: "persona",
-  PERSONA_CREATE: "persona",
-  PERSONA_UPDATE: "persona/{id}",
-  PERSONA_DELETE: "persona/{id}",
+  PERSONA_GET_ALL: "personas",
+  PERSONA_CREATE: "personas",
+  PERSONA_UPDATE: "personas/{id}",
+  PERSONA_DELETE: "personas/{id}",
 };
