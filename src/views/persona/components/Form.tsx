@@ -17,14 +17,16 @@ const PersonaForm = () => {
     (state) => state.persona
   );
 
+  const defaultValues: DataPersona = {
+    id: personaStore.active?.id ?? 0,
+    noDocumento: personaStore.active?.noDocumento ?? "",
+    nombres: personaStore.active?.nombres ?? "",
+    apellidos: personaStore.active?.apellidos ?? "",
+  };
+
   const methods = useForm({
     resolver: yupResolver(formSchema()),
-    defaultValues: {
-      id: personaStore.active?.id,
-      noDocumento: personaStore.active?.noDocumento,
-      nombres: personaStore.active?.nombres,
-      apellidos: personaStore.active?.apellidos,
-    },
+    defaultValues: defaultValues,
   });
 
   const onSubmit = async (data: any) => {};
@@ -44,7 +46,7 @@ const PersonaForm = () => {
     <Drawer open={personaStore.show} anchor="right" variant="temporary">
       <Box position={"relative"} p={(theme) => theme.spacing(3.5, 5)}>
         <Typography variant="h6" width={"332px"}>
-          Nueva Persona
+          {personaStore.title}
         </Typography>
         <IconButton
           size="small"

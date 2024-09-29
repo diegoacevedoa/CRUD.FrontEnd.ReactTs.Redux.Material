@@ -13,7 +13,6 @@ export interface UpdatePersona extends BasePersona {
 }
 
 export interface DataPersona extends BasePersona {
-  // id: number | null | undefined;
   id: number;
 }
 

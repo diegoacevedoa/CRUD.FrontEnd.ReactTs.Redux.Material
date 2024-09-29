@@ -1,4 +1,5 @@
 import { Button, Container, Grid2, Typography } from "@mui/material";
+import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import PersonaList from "./components/List";
 import { DataPersona, PersonaSlice } from "../../models/persona.model";
 import { useDispatch, useSelector } from "react-redux";
@@ -32,20 +33,28 @@ const Persona = () => {
 
   return (
     <Container maxWidth="xl">
-      <Grid2 container direction="row" alignItems={"center"}>
-        <Grid2 size={{ xs: 5, sm: 9, md: 9, lg: 10, xl: 10 }}>
+      <Grid2 container sx={{ paddingTop: 5, paddingBottom: 5 }}>
+        <Grid2
+          size={{ xs: 5, sm: 9, md: 9, lg: 10, xl: 10 }}
+          display="flex"
+          justifyContent="start"
+          alignItems="flex-start"
+        >
           <Typography variant="h4" fontWeight="600">
             Persona
           </Typography>
         </Grid2>
-        <Grid2 size={{ xs: 6, sm: 3, md: 3, lg: 2, xl: 2 }}>
+        <Grid2
+          size={{ xs: 6, sm: 3, md: 3, lg: 2, xl: 2 }}
+          display="flex"
+          justifyContent="end"
+          alignItems="flex-end"
+        >
           <Button
             variant="contained"
             color="primary"
             size="large"
-            // startIcon={
-            //   <Icon icon="bi:plus-circle-fill" width={24} height={24} />
-            // }
+            startIcon={<AddCircleOutlineIcon />}
             onClick={handleNew}
           >
             Nuevo
