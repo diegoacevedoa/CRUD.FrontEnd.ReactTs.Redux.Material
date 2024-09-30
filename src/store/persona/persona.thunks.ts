@@ -31,16 +31,14 @@ export const addPersona = createAsyncThunk(
     const personaService = new PersonaService();
     const response = await personaService.createPersona(dto);
 
-    const data: DataPersona[] = response.data.map((item) => {
-      return {
-        id: item.idPersona,
-        noDocumento: item.noDocumento,
-        nombres: item.nombres,
-        apellidos: item.apellidos,
-      };
-    });
+    const data: DataPersona = {
+      id: response.data.idPersona,
+      noDocumento: response.data.noDocumento,
+      nombres: response.data.nombres,
+      apellidos: response.data.apellidos,
+    };
 
-    return { data: data[0] };
+    return { data: data };
   }
 );
 
@@ -48,8 +46,16 @@ export const updatePersona = createAsyncThunk(
   "appPersona/updatePersona",
   async (dto: UpdatePersona) => {
     const personaService = new PersonaService();
-    const response = await personaService.updatePersona(dto);
-    return { data: dto };
+    await personaService.updatePersona(dto);
+
+    const data: DataPersona = {
+      id: dto.idPersona,
+      noDocumento: dto.noDocumento,
+      nombres: dto.nombres,
+      apellidos: dto.apellidos,
+    };
+
+    return { data: data };
   }
 );
 
@@ -57,7 +63,7 @@ export const deletePersona = createAsyncThunk(
   "appPersona/deletePersona",
   async (id: number) => {
     const personaService = new PersonaService();
-    const response = await personaService.deletePersona(id);
+    await personaService.deletePersona(id);
     return { id };
   }
 );

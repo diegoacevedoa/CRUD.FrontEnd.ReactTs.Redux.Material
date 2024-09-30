@@ -1,1 +1,1 @@
-export const REGEX_SNAKE_CASE = /^[A-Z0-9_]+$/
+export const REGEX_SNAKE_CASE = /^[A-Z0-9_]+$/;

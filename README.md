@@ -102,6 +102,7 @@ export const labels = {
     "Oops! Algo salió mal del lado del servidor. Estamos trabajando para solucionarlo.",
   INTERNALERRORGATEWAY:
     "Oops! Algo salió mal en el Gateway. Estamos trabajando para solucionarlo.",
+  OK: "La operación ha sido exitosa.",
 };
 
 19- Agregamos el archivo util.util.ts en la carpeta utils:
@@ -202,7 +203,7 @@ class HttpService implements Http {
     request = this.updateHeader(request, {
       "Content-Type": "application/json",
     });
-    request.data = httpRequestAdapter(request.data);
+    // request.data = httpRequestAdapter(request.data);
     return request;
   }
 
@@ -378,7 +379,7 @@ export interface BasePersona {
 export interface CreatePersona extends BasePersona {}
 
 export interface UpdatePersona extends BasePersona {
-  id: number;
+  idPersona: number;
 }
 
 export interface DataPersona extends BasePersona {
@@ -391,13 +392,23 @@ export interface DataResponsePersona extends BasePersona {
 
 export interface PersonaResponse extends HttpResponse<DataResponsePersona[]> {}
 
+export interface PersonaResponseOne extends HttpResponse<DataResponsePersona> {}
+
 export interface PersonaSlice {
   data: DataPersona[];
+  active?: DataPersona | null;
+  title: string;
+  isNew: boolean;
+  show: boolean;
   isLoading: boolean;
 }
 
 export const InitialStatePersonaSlice: PersonaSlice = {
   data: [],
+  active: null,
+  title: "",
+  isNew: false,
+  show: false,
   isLoading: false,
 };
 
@@ -408,6 +419,7 @@ import HttpService from "../../configs/http.config";
 import {
   CreatePersona,
   PersonaResponse,
+  PersonaResponseOne,
   UpdatePersona,
 } from "../../models/persona.model";
 
@@ -424,8 +436,8 @@ export class PersonaService {
     return response;
   }
 
-  async createPersona(dto: CreatePersona): Promise<PersonaResponse> {
-    const response = await this.http.post<PersonaResponse>(
+  async createPersona(dto: CreatePersona): Promise<PersonaResponseOne> {
+    const response = await this.http.post<PersonaResponseOne>(
       API.PERSONA_CREATE,
       dto
     );
@@ -433,8 +445,8 @@ export class PersonaService {
     return response;
   }
 
-  async updatePersona(dto: UpdatePersona): Promise<PersonaResponse> {
-    const response = await this.http.put<PersonaResponse>(
+  async updatePersona(dto: UpdatePersona): Promise<void> {
+    const response = await this.http.put<void>(
       API.PERSONA_UPDATE.replace("{id}", dto.idPersona.toString()),
       dto
     );
@@ -486,16 +498,14 @@ export const addPersona = createAsyncThunk(
     const personaService = new PersonaService();
     const response = await personaService.createPersona(dto);
 
-    const data: DataPersona[] = response.data.map((item) => {
-      return {
-        id: item.idPersona,
-        noDocumento: item.noDocumento,
-        nombres: item.nombres,
-        apellidos: item.apellidos,
-      };
-    });
+    const data: DataPersona = {
+      id: response.data.idPersona,
+      noDocumento: response.data.noDocumento,
+      nombres: response.data.nombres,
+      apellidos: response.data.apellidos,
+    };
 
-    return { data: data[0] };
+    return { data: data };
   }
 );
 
@@ -503,8 +513,16 @@ export const updatePersona = createAsyncThunk(
   "appPersona/updatePersona",
   async (dto: UpdatePersona) => {
     const personaService = new PersonaService();
-    const response = await personaService.updatePersona(dto);
-    return { data: dto };
+    await personaService.updatePersona(dto);
+
+    const data: DataPersona = {
+      id: dto.idPersona,
+      noDocumento: dto.noDocumento,
+      nombres: dto.nombres,
+      apellidos: dto.apellidos,
+    };
+
+    return { data: data };
   }
 );
 
@@ -512,7 +530,7 @@ export const deletePersona = createAsyncThunk(
   "appPersona/deletePersona",
   async (id: number) => {
     const personaService = new PersonaService();
-    const response = await personaService.deletePersona(id);
+    await personaService.deletePersona(id);
     return { id };
   }
 );
@@ -531,7 +549,17 @@ import { InitialStatePersonaSlice } from "../../models/persona.model";
 export const personaSlice = createSlice({
   name: "persona",
   initialState: InitialStatePersonaSlice,
-  reducers: {},
+  reducers: {
+    activeForm: (state, action) => {
+      return {
+        ...state,
+        active: action.payload.data,
+        title: action.payload.title,
+        isNew: action.payload.isNew,
+        show: action.payload.show,
+      };
+    },
+  },
   extraReducers: (builder) => {
     builder
       .addCase(findAllPersonas.pending, (state) => {
@@ -591,6 +619,9 @@ export const personaSlice = createSlice({
   },
 });
 
+// Action creators are generated for each case reducer function
+export const { activeForm } = personaSlice.actions;
+
 27- Creamos carpeta store y adentro del archivo store.ts que contendrá todos los reducers con el siguiente código:
 
 // ** Toolkit imports
@@ -607,7 +638,6 @@ export const store = configureStore({
 export type RootState = ReturnType<typeof store.getState>;
 // Inferred type: {posts: PostsState, comments: CommentsState, users: UsersState}
 export type AppDispatch = typeof store.dispatch;
-
 
 28- El archivo principal (main.tsx) donde queda el store como el proveedor del store queda asi:
 
@@ -630,15 +660,7 @@ createRoot(document.getElementById("root")!).render(
   </StrictMode>
 );
 
-29- Agregamos la carpeta components, pages y views en src y agregamos la carpeta persona adentro de views, agregamos las carpetas components y schemas en persona, agregamos el archivo index.tsx y modificamos el archivo App.tsx:
-
-import Persona from "../views/persona";
-
-const PersonaPage = () => {
-  return <Persona />;
-};
-
-export default PersonaPage;
+29- Agregamos la carpeta components, pages y views en src:
 
 30- Agregamos adentro de la carpeta components la carpeta table y adentro el archivo Table.tsx:
 
@@ -705,5 +727,637 @@ export { default } from "./Table";
 
 33- Instalamos el componente de yup para las validaciones de esquema:npm install @hookform/resolvers yup
 
-34- 
+34- Agregamos adentro de la carpeta components la carpeta confirmationDelete y adentro el archivo confirmationDelete.tsx:
 
+// ** MUI Imports
+import Button from "@mui/material/Button";
+import Dialog from "@mui/material/Dialog";
+import { styled } from "@mui/material/styles";
+import IconButton from "@mui/material/IconButton";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContentText from "@mui/material/DialogContentText";
+import CloseIcon from "@mui/icons-material/Close";
+import ErrorOutlineOutlinedIcon from "@mui/icons-material/ErrorOutlineOutlined";
+
+// Styled component
+const DialogContentTextStyled = styled(DialogContentText)(() => ({
+  fontSize: "24px !important",
+  width: "346px",
+  textAlign: "center",
+  paddingBottom: "10px",
+}));
+
+interface IDataInput {
+  open: boolean;
+  setOpen: Function;
+  setConfirm: Function;
+  label: string;
+}
+
+const ConfirmationDelete = ({
+  open,
+  setOpen,
+  setConfirm,
+  label,
+}: IDataInput) => {
+  const handleClose = () => {
+    setOpen(false);
+    setConfirm(false);
+  };
+
+  const handleConfirm = () => {
+    setOpen(false);
+    setConfirm(true);
+  };
+
+  return (
+    <Dialog
+      open={open}
+      disableEscapeKeyDown
+      aria-labelledby="alert-dialog-title"
+      aria-describedby="alert-dialog-description"
+      onClose={handleClose}
+      sx={{
+        "& .MuiPaper-root": {
+          padding: "20px 40px 60px 40px",
+        },
+      }}
+    >
+      <IconButton
+        size="small"
+        onClick={handleClose}
+        sx={{ position: "absolute", right: "1rem", top: "1rem" }}
+      >
+        <CloseIcon />
+      </IconButton>
+      <DialogTitle id="alert-dialog-title" alignSelf={"center"}>
+        <ErrorOutlineOutlinedIcon color={"error"} sx={{ fontSize: 100 }} />
+      </DialogTitle>
+      <DialogContent>
+        <DialogContentTextStyled id="alert-dialog-description">
+          {label}
+        </DialogContentTextStyled>
+      </DialogContent>
+      <DialogActions
+        className="dialog-actions-dense"
+        sx={{ justifyContent: "center" }}
+      >
+        <Button
+          variant="contained"
+          color="error"
+          size="medium"
+          sx={{
+            textTransform: "uppercase",
+            whiteSpace: "nowrap",
+          }}
+          onClick={handleConfirm}
+        >
+          eliminar
+        </Button>
+        <Button
+          variant="outlined"
+          size="medium"
+          sx={{
+            textTransform: "uppercase",
+            whiteSpace: "nowrap",
+            borderColor: (theme) => theme.palette.text.secondary,
+            color: (theme) => theme.palette.text.secondary,
+          }}
+          onClick={handleClose}
+        >
+          cancelar
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+};
+
+export default ConfirmationDelete;
+
+35- Agregamos adentro de la carpeta table el archivo index.ts:
+
+export { default } from "./ConfirmationDelete";
+
+36- Agregamos la carpeta persona adentro de views, agregamos las carpetas components y schemas en persona, 
+
+37- Agregamos el archivo List.tsx adentro de la carpeta components:
+
+import { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  deletePersona,
+  findAllPersonas,
+} from "../../../store/persona/persona.thunks";
+import { DataPersona, PersonaSlice } from "../../../models/persona.model";
+import { Box, Typography, Tooltip, IconButton, Link } from "@mui/material";
+import DeleteIcon from "@mui/icons-material/Delete";
+import EditIcon from "@mui/icons-material/Edit";
+import { GridColDef } from "@mui/x-data-grid";
+import Table from "../../../components/table";
+import { AppDispatch, RootState } from "../../../store/store";
+import { activeForm } from "../../../store/persona/persona.slice";
+import ConfirmationDelete from "../../../components/confirmationDelete";
+import { snackbarUtilities } from "../../../configs/snackbarManager.config";
+import { labels } from "../../../utils/messageES.util";
+
+const PersonaList = () => {
+  // ** States
+  const [openConfirm, setOpenConfirm] = useState(false);
+  const [confirm, setConfirm] = useState(false);
+  const [idDelete, setIdDelete] = useState(0);
+
+  // ** Hooks
+  const dispatch = useDispatch<AppDispatch>();
+  const personaStore: PersonaSlice = useSelector<RootState, PersonaSlice>(
+    (state) => state.persona
+  );
+
+  useEffect(() => {
+    search();
+  }, []);
+
+  useEffect(() => {
+    if (confirm) {
+      handleDelete(idDelete);
+    }
+  }, [confirm]);
+
+  const search = async () => {
+    dispatch(findAllPersonas()).unwrap();
+  };
+
+  const handleEdit = (item: DataPersona) => {
+    dispatch(
+      activeForm({
+        title: "Editar Persona",
+        isNew: false,
+        show: true,
+        data: item,
+      })
+    );
+  };
+
+  const handleDelete = (id: number) => {
+    dispatch(deletePersona(id))
+      .unwrap()
+      .then(() => {
+        snackbarUtilities.success(labels.OK);
+      });
+  };
+
+  const columns: GridColDef[] = [
+    {
+      minWidth: 70,
+      sortable: false,
+      align: "center",
+      field: "actions",
+      headerName: "ACCIÓN",
+      renderCell: ({ row }) => (
+        <Box display="flex" alignItems="center">
+          <Tooltip title="Editar">
+            <IconButton size="small" onClick={() => handleEdit(row)}>
+              <EditIcon />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Eliminar">
+            <IconButton
+              size="small"
+              component={Link}
+              onClick={() => {
+                setOpenConfirm(true);
+                setIdDelete(row.id);
+              }}
+            >
+              <DeleteIcon />
+            </IconButton>
+          </Tooltip>
+          {openConfirm && (
+            <ConfirmationDelete
+              open={openConfirm}
+              setOpen={setOpenConfirm}
+              setConfirm={setConfirm}
+              label={`¿Estás seguro que deseas eliminar este elemento?`}
+            />
+          )}
+        </Box>
+      ),
+    },
+    {
+      minWidth: 200,
+      align: "left",
+      field: "noDocumento",
+      headerName: "No DOCUMENTO",
+      renderCell: ({ row }) => (
+        <Typography variant="body1" fontSize="14px">
+          {row.noDocumento}
+        </Typography>
+      ),
+    },
+    {
+      minWidth: 300,
+      align: "left",
+      field: "nombres",
+      headerName: "NOMBRES",
+      renderCell: ({ row }) => (
+        <Typography variant="body1" fontSize="14px">
+          {row.nombres}
+        </Typography>
+      ),
+    },
+    {
+      minWidth: 300,
+      align: "left",
+      field: "apellidos",
+      headerName: "APELLIDOS",
+      renderCell: ({ row }) => (
+        <Typography variant="body1" fontSize="14px">
+          {row.apellidos}
+        </Typography>
+      ),
+    },
+  ];
+
+  return (
+    <Table
+      data={personaStore.data}
+      columns={columns}
+      isLoading={personaStore.isLoading}
+    />
+  );
+};
+
+export default PersonaList;
+
+38- Agregamos el archivo form.schema.ts adentro de la carpeta schemas:
+
+import { object, string, number } from "yup";
+import { labels } from "../../../utils/messageES.util";
+
+export const formSchema = () => {
+  return object().shape({
+    id: number().optional(),
+    noDocumento: string().required(labels.REQUIRED),
+    nombres: string().required(labels.REQUIRED),
+    apellidos: string().required(labels.REQUIRED),
+  });
+};
+
+39- Agregamos el archivo index.ts adentro de la carpeta schemas:
+
+export * from "./form.schema";
+
+40- Agregamos el archivo FormData.tsx adentro de la carpeta components:
+
+// ** React Imports
+import { useEffect } from "react";
+
+// ** MUI Imports
+import {
+  Grid2,
+  Button,
+  FormControl,
+  FormHelperText,
+  TextField,
+} from "@mui/material";
+
+// ** Third Party Imports
+import { useFormContext, Controller } from "react-hook-form";
+import { PersonaSlice } from "../../../models/persona.model";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState } from "../../../store/store";
+import { activeForm } from "../../../store/persona/persona.slice";
+
+const FormData = () => {
+  const dispatch = useDispatch<AppDispatch>();
+  const personaStore: PersonaSlice = useSelector<RootState, PersonaSlice>(
+    (state) => state.persona
+  );
+
+  // ** Hooks
+  const {
+    control,
+    reset,
+    formState: { errors },
+  } = useFormContext();
+
+  useEffect(() => {
+    reset();
+  }, [personaStore.show]);
+
+  const handleClose = () => {
+    dispatch(
+      activeForm({
+        title: "",
+        isNew: false,
+        show: false,
+        data: null,
+      })
+    );
+  };
+
+  return (
+    <Grid2 container spacing={5} padding={5} width={"400px"}>
+      <Grid2 size={{ xs: 12, sm: 12, md: 12, lg: 12, xl: 12 }}>
+        <FormControl fullWidth>
+          <Controller
+            name="noDocumento"
+            control={control}
+            rules={{ required: true }}
+            render={({ field: { value, onChange } }) => (
+              <TextField
+                type="text"
+                value={value ?? ""}
+                onChange={onChange}
+                label={"No Documento"}
+                InputLabelProps={{ shrink: true }}
+                aria-describedby="validation-async-invoice"
+                error={Boolean(errors.noDocumento)}
+                // helperText={errors.noDocumento?.message}
+              />
+            )}
+          />
+        </FormControl>
+      </Grid2>
+      <Grid2 size={{ xs: 12, sm: 12, md: 12, lg: 12, xl: 12 }}>
+        <FormControl fullWidth>
+          <Controller
+            name="nombres"
+            control={control}
+            rules={{ required: true }}
+            render={({ field: { value, onChange } }) => (
+              <TextField
+                type="text"
+                value={value ?? ""}
+                onChange={onChange}
+                label={"Nombres"}
+                InputLabelProps={{ shrink: true }}
+                aria-describedby="validation-async-invoice"
+                error={Boolean(errors.nombres)}
+                // helperText={errors.nombres?.message}
+              />
+            )}
+          />
+        </FormControl>
+      </Grid2>
+      <Grid2 size={{ xs: 12, sm: 12, md: 12, lg: 12, xl: 12 }}>
+        <FormControl fullWidth>
+          <Controller
+            name="apellidos"
+            control={control}
+            rules={{ required: true }}
+            render={({ field: { value, onChange } }) => (
+              <TextField
+                type="text"
+                value={value ?? ""}
+                onChange={onChange}
+                label={"Apellidos"}
+                InputLabelProps={{ shrink: true }}
+                aria-describedby="validation-async-invoice"
+                error={Boolean(errors.apellidos)}
+                // helperText={errors.apellidos?.message}
+              />
+            )}
+          />
+        </FormControl>
+      </Grid2>
+      <Grid2
+        size={{ xs: 12, sm: 12, md: 12, lg: 12, xl: 12 }}
+        display={"inline-flex"}
+        justifyContent={"center"}
+        gap={2}
+      >
+        <Button type="submit" variant="contained" size="large" color="primary">
+          GUARDAR
+        </Button>
+        <Button
+          variant="outlined"
+          size="large"
+          color="inherit"
+          onClick={handleClose}
+        >
+          CANCELAR
+        </Button>
+      </Grid2>
+    </Grid2>
+  );
+};
+
+export default FormData;
+
+41- Agregamos el archivo Form.tsx adentro de la carpeta components:
+
+import { Box, Drawer, IconButton, Typography } from "@mui/material";
+import CloseIcon from "@mui/icons-material/Close";
+
+// ** Third Party Imports
+import { yupResolver } from "@hookform/resolvers/yup";
+import { useForm, FormProvider } from "react-hook-form";
+import FormData from "./FormData";
+import { formSchema } from "../schemas";
+import {
+  CreatePersona,
+  DataPersona,
+  PersonaSlice,
+  UpdatePersona,
+} from "../../../models/persona.model";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState } from "../../../store/store";
+import { activeForm } from "../../../store/persona/persona.slice";
+import {
+  addPersona,
+  updatePersona,
+} from "../../../store/persona/persona.thunks";
+import { snackbarUtilities } from "../../../configs/snackbarManager.config";
+import { labels } from "../../../utils/messageES.util";
+
+const PersonaForm = () => {
+  const dispatch = useDispatch<AppDispatch>();
+  const personaStore: PersonaSlice = useSelector<RootState, PersonaSlice>(
+    (state) => state.persona
+  );
+
+  const defaultValues: DataPersona = {
+    id: personaStore.active?.id ?? 0,
+    noDocumento: personaStore.active?.noDocumento ?? "",
+    nombres: personaStore.active?.nombres ?? "",
+    apellidos: personaStore.active?.apellidos ?? "",
+  };
+
+  const methods = useForm({
+    resolver: yupResolver(formSchema()),
+    defaultValues: defaultValues,
+  });
+
+  const handleCreatePersona = async (data: DataPersona) => {
+    const dataToCreate: CreatePersona = {
+      noDocumento: data.noDocumento,
+      nombres: data.nombres,
+      apellidos: data.apellidos,
+    };
+
+    dispatch(addPersona(dataToCreate))
+      .unwrap()
+      .then(() => {
+        snackbarUtilities.success(labels.OK);
+      })
+      .finally(() => {
+        handleClose();
+      });
+  };
+
+  const handleUpdatePersona = async (data: DataPersona) => {
+    const dataToUpdate: UpdatePersona = {
+      idPersona: data.id,
+      noDocumento: data.noDocumento,
+      nombres: data.nombres,
+      apellidos: data.apellidos,
+    };
+
+    dispatch(updatePersona(dataToUpdate))
+      .unwrap()
+      .then(() => {
+        snackbarUtilities.success(labels.OK);
+      })
+      .finally(() => {
+        handleClose();
+      });
+  };
+
+  const onSubmit = async (data: any) => {
+    if (personaStore.isNew) {
+      handleCreatePersona(data);
+    } else {
+      handleUpdatePersona(data);
+    }
+  };
+
+  const handleClose = () => {
+    dispatch(
+      activeForm({
+        title: "",
+        isNew: false,
+        show: false,
+        data: null,
+      })
+    );
+  };
+
+  return (
+    <Drawer open={personaStore.show} anchor="right" variant="temporary">
+      <Box position={"relative"} p={(theme) => theme.spacing(3.5, 5)}>
+        <Typography variant="h6" width={"332px"}>
+          {personaStore.title}
+        </Typography>
+        <IconButton
+          size="small"
+          onClick={handleClose}
+          sx={{ position: "absolute", right: "1rem", top: "1rem" }}
+        >
+          <CloseIcon />
+        </IconButton>
+      </Box>
+      <FormProvider {...methods}>
+        <form
+          noValidate
+          autoComplete="off"
+          onSubmit={methods.handleSubmit(onSubmit)}
+        >
+          <FormData />
+        </form>
+      </FormProvider>
+    </Drawer>
+  );
+};
+
+export default PersonaForm;
+
+42- Agregamos el archivo index.tsx adentro de la carpeta persona:
+
+import { Button, Container, Grid2, Typography } from "@mui/material";
+import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
+import PersonaList from "./components/List";
+import { DataPersona, PersonaSlice } from "../../models/persona.model";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState } from "../../store/store";
+import { activeForm } from "../../store/persona/persona.slice";
+import PersonaForm from "./components/Form";
+
+const Persona = () => {
+  const dispatch = useDispatch<AppDispatch>();
+  const personaStore: PersonaSlice = useSelector<RootState, PersonaSlice>(
+    (state) => state.persona
+  );
+
+  const handleNew = () => {
+    const defaultFormValues: DataPersona = {
+      id: 0,
+      noDocumento: "",
+      nombres: "",
+      apellidos: "",
+    };
+
+    dispatch(
+      activeForm({
+        title: "Agregar Persona",
+        isNew: true,
+        show: true,
+        data: defaultFormValues,
+      })
+    );
+  };
+
+  return (
+    <Container maxWidth="xl">
+      <Grid2 container sx={{ paddingTop: 5, paddingBottom: 5 }}>
+        <Grid2
+          size={{ xs: 5, sm: 9, md: 9, lg: 10, xl: 10 }}
+          display="flex"
+          justifyContent="start"
+          alignItems="flex-start"
+        >
+          <Typography variant="h4" fontWeight="600">
+            Persona
+          </Typography>
+        </Grid2>
+        <Grid2
+          size={{ xs: 6, sm: 3, md: 3, lg: 2, xl: 2 }}
+          display="flex"
+          justifyContent="end"
+          alignItems="flex-end"
+        >
+          <Button
+            variant="contained"
+            color="primary"
+            size="large"
+            startIcon={<AddCircleOutlineIcon />}
+            onClick={handleNew}
+          >
+            Nuevo
+          </Button>
+          {personaStore.active && <PersonaForm />}
+        </Grid2>
+      </Grid2>
+      <Grid2 container>
+        <Grid2 size={{ xs: 12, sm: 12, md: 12, lg: 12, xl: 12 }}>
+          <PersonaList />
+        </Grid2>
+      </Grid2>
+    </Container>
+  );
+};
+
+export default Persona;
+
+43- Modificamos el archivo Persona.tsx de la carpet pages:
+
+import Persona from "../views/persona";
+
+const PersonaPage = () => {
+  return <Persona />;
+};
+
+export default PersonaPage;
+
+44- Pruebas

@@ -3,6 +3,7 @@ import HttpService from "../../configs/http.config";
 import {
   CreatePersona,
   PersonaResponse,
+  PersonaResponseOne,
   UpdatePersona,
 } from "../../models/persona.model";
 
@@ -19,8 +20,8 @@ export class PersonaService {
     return response;
   }
 
-  async createPersona(dto: CreatePersona): Promise<PersonaResponse> {
-    const response = await this.http.post<PersonaResponse>(
+  async createPersona(dto: CreatePersona): Promise<PersonaResponseOne> {
+    const response = await this.http.post<PersonaResponseOne>(
       API.PERSONA_CREATE,
       dto
     );
@@ -28,9 +29,9 @@ export class PersonaService {
     return response;
   }
 
-  async updatePersona(dto: UpdatePersona): Promise<PersonaResponse> {
-    const response = await this.http.put<PersonaResponse>(
-      API.PERSONA_UPDATE.replace("{id}", dto.id.toString()),
+  async updatePersona(dto: UpdatePersona): Promise<void> {
+    const response = await this.http.put<void>(
+      API.PERSONA_UPDATE.replace("{id}", dto.idPersona.toString()),
       dto
     );
 

@@ -11,4 +11,5 @@ export const labels = {
     "Oops! Algo salió mal del lado del servidor. Estamos trabajando para solucionarlo.",
   INTERNALERRORGATEWAY:
     "Oops! Algo salió mal en el Gateway. Estamos trabajando para solucionarlo.",
+  OK: "La operación ha sido exitosa.",
 };

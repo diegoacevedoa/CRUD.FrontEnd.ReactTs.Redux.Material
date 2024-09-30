@@ -1,6 +1,9 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { findAllPersonas } from "../../../store/persona/persona.thunks";
+import {
+  deletePersona,
+  findAllPersonas,
+} from "../../../store/persona/persona.thunks";
 import { DataPersona, PersonaSlice } from "../../../models/persona.model";
 import { Box, Typography, Tooltip, IconButton, Link } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -9,8 +12,17 @@ import { GridColDef } from "@mui/x-data-grid";
 import Table from "../../../components/table";
 import { AppDispatch, RootState } from "../../../store/store";
 import { activeForm } from "../../../store/persona/persona.slice";
+import ConfirmationDelete from "../../../components/confirmationDelete";
+import { snackbarUtilities } from "../../../configs/snackbarManager.config";
+import { labels } from "../../../utils/messageES.util";
 
 const PersonaList = () => {
+  // ** States
+  const [openConfirm, setOpenConfirm] = useState(false);
+  const [confirm, setConfirm] = useState(false);
+  const [idDelete, setIdDelete] = useState(0);
+
+  // ** Hooks
   const dispatch = useDispatch<AppDispatch>();
   const personaStore: PersonaSlice = useSelector<RootState, PersonaSlice>(
     (state) => state.persona
@@ -19,6 +31,12 @@ const PersonaList = () => {
   useEffect(() => {
     search();
   }, []);
+
+  useEffect(() => {
+    if (confirm) {
+      handleDelete(idDelete);
+    }
+  }, [confirm]);
 
   const search = async () => {
     dispatch(findAllPersonas()).unwrap();
@@ -33,6 +51,14 @@ const PersonaList = () => {
         data: item,
       })
     );
+  };
+
+  const handleDelete = (id: number) => {
+    dispatch(deletePersona(id))
+      .unwrap()
+      .then(() => {
+        snackbarUtilities.success(labels.OK);
+      });
   };
 
   const columns: GridColDef[] = [
@@ -53,22 +79,22 @@ const PersonaList = () => {
             <IconButton
               size="small"
               component={Link}
-              // onClick={() => {
-              //   setOpenConfirmTrash(true);
-              //   setIdUser(row.id);
-              // }}
+              onClick={() => {
+                setOpenConfirm(true);
+                setIdDelete(row.id);
+              }}
             >
               <DeleteIcon />
             </IconButton>
           </Tooltip>
-          {/* {openConfirmTrash && (
-            <DialogConfirmationDelete
-              open={openConfirmTrash}
-              setOpen={setOpenConfirmTrash}
-              setConfirm={setConfirmTrash}
+          {openConfirm && (
+            <ConfirmationDelete
+              open={openConfirm}
+              setOpen={setOpenConfirm}
+              setConfirm={setConfirm}
               label={`¿Estás seguro que deseas eliminar este elemento?`}
             />
-          )} */}
+          )}
         </Box>
       ),
     },

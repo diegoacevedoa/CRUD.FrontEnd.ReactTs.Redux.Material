@@ -39,7 +39,7 @@ class HttpService implements Http {
     request = this.updateHeader(request, {
       "Content-Type": "application/json",
     });
-    request.data = httpRequestAdapter(request.data);
+    // request.data = httpRequestAdapter(request.data);
     return request;
   }
 

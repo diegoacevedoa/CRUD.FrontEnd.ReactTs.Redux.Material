@@ -6,10 +6,21 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import { useForm, FormProvider } from "react-hook-form";
 import FormData from "./FormData";
 import { formSchema } from "../schemas";
-import { DataPersona, PersonaSlice } from "../../../models/persona.model";
+import {
+  CreatePersona,
+  DataPersona,
+  PersonaSlice,
+  UpdatePersona,
+} from "../../../models/persona.model";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "../../../store/store";
 import { activeForm } from "../../../store/persona/persona.slice";
+import {
+  addPersona,
+  updatePersona,
+} from "../../../store/persona/persona.thunks";
+import { snackbarUtilities } from "../../../configs/snackbarManager.config";
+import { labels } from "../../../utils/messageES.util";
 
 const PersonaForm = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -29,7 +40,48 @@ const PersonaForm = () => {
     defaultValues: defaultValues,
   });
 
-  const onSubmit = async (data: any) => {};
+  const handleCreatePersona = async (data: DataPersona) => {
+    const dataToCreate: CreatePersona = {
+      noDocumento: data.noDocumento,
+      nombres: data.nombres,
+      apellidos: data.apellidos,
+    };
+
+    dispatch(addPersona(dataToCreate))
+      .unwrap()
+      .then(() => {
+        snackbarUtilities.success(labels.OK);
+      })
+      .finally(() => {
+        handleClose();
+      });
+  };
+
+  const handleUpdatePersona = async (data: DataPersona) => {
+    const dataToUpdate: UpdatePersona = {
+      idPersona: data.id,
+      noDocumento: data.noDocumento,
+      nombres: data.nombres,
+      apellidos: data.apellidos,
+    };
+
+    dispatch(updatePersona(dataToUpdate))
+      .unwrap()
+      .then(() => {
+        snackbarUtilities.success(labels.OK);
+      })
+      .finally(() => {
+        handleClose();
+      });
+  };
+
+  const onSubmit = async (data: any) => {
+    if (personaStore.isNew) {
+      handleCreatePersona(data);
+    } else {
+      handleUpdatePersona(data);
+    }
+  };
 
   const handleClose = () => {
     dispatch(
